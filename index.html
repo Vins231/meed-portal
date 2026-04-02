@@ -2296,7 +2296,7 @@ window.MEED_API_URL = 'https://script.google.com/macros/s/AKfycbxyGQhUxp1WcIxUZl
 
 function _apiCall(action, data, successFn, failureFn) {
   const url = window.MEED_API_URL;
-  if (!url || url === 'https://script.google.com/macros/s/AKfycbxyGQhUxp1WcIxUZlwYFSqczmQvZo7p66FOvJlsZIA7Q83GmAapHtyjdufDzsDkUBlx/exec') {
+  if (!url) {
     const msg = 'API URL not set. Open index.html and set window.MEED_API_URL.';
     console.error(msg);
     if (failureFn) failureFn(new Error(msg));
