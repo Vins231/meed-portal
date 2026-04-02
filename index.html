@@ -1903,7 +1903,7 @@ tbody tr:last-child td { border-bottom: none; }
 <script>
 // ── PORTAL CONFIGURATION ─────────────────────────────────────
 // After deploying Apps Script as Web App, paste your URL below:
-window.MEED_API_URL = 'https://script.google.com/macros/s/AKfycbyR7-JGV16CBKkO0EYputQnTpn23GOJjV7KsCa5iihA-Wk_yWBlj7a1nX0PwcHERa7T/exec';
+window.MEED_API_URL = 'YOUR_APPS_SCRIPT_API_URL_HERE';
 // Example: 'https://script.google.com/macros/s/AKfycb.../exec'
 // ─────────────────────────────────────────────────────────────
 </script>
@@ -2289,87 +2289,94 @@ window.MEED_API_URL = 'https://script.google.com/macros/s/AKfycbyR7-JGV16CBKkO0E
 </div>
 <script>
 // ════════════════════════════════════════════════════════════
-//  API LAYER — replaces gsr()
-//  Set API_URL to your deployed Apps Script Web App URL
+//  API LAYER v2 — Direct named functions, no Proxy magic
+//  Set MEED_API_URL in the config block above <body>
 // ════════════════════════════════════════════════════════════
-const API_URL = window.MEED_API_URL || 'https://script.google.com/macros/s/AKfycbyR7-JGV16CBKkO0EYputQnTpn23GOJjV7KsCa5iihA-Wk_yWBlj7a1nX0PwcHERa7T/exec';
 
-function api(action, data, email) {
-  return new Promise((resolve, reject) => {
-    fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action, data: data || {}, email: email || (window.currentUser && window.currentUser.email) || '' })
+function _apiCall(action, data, successFn, failureFn) {
+  const url = window.MEED_API_URL;
+  if (!url || url === 'YOUR_APPS_SCRIPT_API_URL_HERE') {
+    const msg = 'API URL not set. Open index.html and set window.MEED_API_URL.';
+    console.error(msg);
+    if (failureFn) failureFn(new Error(msg));
+    else if (typeof toast === 'function') toast(msg, 'error');
+    return;
+  }
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({
+      action,
+      data: data || {},
+      email: (window.currentUser && window.currentUser.email) || ''
     })
-    .then(r => r.json())
-    .then(resolve)
-    .catch(reject);
+  })
+  .then(r => r.json())
+  .then(res => { if (successFn) successFn(res); })
+  .catch(err => {
+    console.error('API error [' + action + ']:', err);
+    if (failureFn) failureFn(err);
+    else if (typeof toast === 'function') toast('Network error: ' + err.message, 'error');
   });
 }
 
-// Drop-in replacement for gsr() fluent API
-// Usage: gsr().withSuccessHandler(fn).functionName(args)  →  same pattern
+// Fluent builder — gsr().withSuccessHandler(fn).withFailureHandler(fn).actionName(args...)
+// Works identically to google.script.run
 function gsr() {
-  let _success = r => r;
-  let _failure = e => { console.error('API error:', e); toast('Network error: ' + e.message, 'error'); };
-  const proxy = {
-    withSuccessHandler(fn) { _success = fn; return proxy; },
-    withFailureHandler(fn) { _failure = fn; return proxy; },
+  let _ok  = null;
+  let _err  = null;
+  const b = {
+    withSuccessHandler(fn) { _ok  = fn; return b; },
+    withFailureHandler(fn) { _err = fn; return b; },
+    // ── Auth ──────────────────────────────────────────────
+    login(email, password)         { _apiCall('login',                 { email, password },             _ok, _err); },
+    changePassword(email, old_, new_){ _apiCall('changePassword',      { oldPass: old_, newPass: new_ }, _ok, _err); },
+    // ── Master ────────────────────────────────────────────
+    getMasterData()                { _apiCall('getMasterData',          {},                              _ok, _err); },
+    getCompetentAuthority(wt, c)   { _apiCall('getCompetentAuthority',  { workType: wt, cost: c },       _ok, _err); },
+    // ── Planning ─────────────────────────────────────────
+    getPlanningRecords()           { _apiCall('getPlanningRecords',     {},                              _ok, _err); },
+    addPlanningRecord(rec, email)  { _apiCall('addPlanningRecord',      { record: rec },                 _ok, _err); },
+    updatePlanningRecord(id, u, em){ _apiCall('updatePlanningRecord',   { id, updates: u },              _ok, _err); },
+    submitPlanningForApproval(id, em){ _apiCall('submitPlanningForApproval', { id },                     _ok, _err); },
+    // ── Approval ─────────────────────────────────────────
+    getUnderApprovalRecords()      { _apiCall('getUnderApprovalRecords',{},                              _ok, _err); },
+    updateUnderApprovalRecord(id, u, em){ _apiCall('updateUnderApprovalRecord', { id, updates: u },      _ok, _err); },
+    moveToTender(id, em)           { _apiCall('moveToTender',           { id },                          _ok, _err); },
+    // ── Tender ───────────────────────────────────────────
+    getTenderRecords()             { _apiCall('getTenderRecords',       {},                              _ok, _err); },
+    updateTenderRecord(id, u, em)  { _apiCall('updateTenderRecord',     { id, updates: u },              _ok, _err); },
+    getTenderBidders(tid)          { _apiCall('getTenderBidders',       { tenderId: tid },               _ok, _err); },
+    addTenderBidder(tid, bid, em)  { _apiCall('addTenderBidder',        { tenderId: tid, bidder: bid },  _ok, _err); },
+    moveToAwarded(id, em)          { _apiCall('moveToAwarded',          { id },                          _ok, _err); },
+    // ── Awarded ──────────────────────────────────────────
+    getAwardedRecords()            { _apiCall('getAwardedRecords',      {},                              _ok, _err); },
+    updateAwardedRecord(id, u, em) { _apiCall('updateAwardedRecord',    { id, updates: u },              _ok, _err); },
+    updateProgress(id, p, s, em)   { _apiCall('updateProgress',         { id, progress: p, status: s },  _ok, _err); },
+    updatePayment(id, amt, dt, em) { _apiCall('updatePayment',          { id, amount: amt, billDate: dt },_ok, _err); },
+    // ── BG ───────────────────────────────────────────────
+    getBGRecords()                 { _apiCall('getBGRecords',           {},                              _ok, _err); },
+    addBGRecord(rec, em)           { _apiCall('addBGRecord',            { record: rec },                 _ok, _err); },
+    updateBGRecord(id, u, em)      { _apiCall('updateBGRecord',         { id, updates: u },              _ok, _err); },
+    // ── Dashboard & Alerts ───────────────────────────────
+    getDashboardData()             { _apiCall('getDashboardData',       {},                              _ok, _err); },
+    getAllAlerts()                  { _apiCall('getAllAlerts',            {},                              _ok, _err); },
+    getProgressReport(f)           { _apiCall('getProgressReport',      { filters: f },                  _ok, _err); },
+    getPipelineReport()            { _apiCall('getPipelineReport',      {},                              _ok, _err); },
+    getActivityLog(lim)            { _apiCall('getActivityLog',         { limit: lim },                  _ok, _err); },
+    // ── Users ────────────────────────────────────────────
+    getUsers()                     { _apiCall('getUsers',               {},                              _ok, _err); },
+    addUser(u, em)                 { _apiCall('addUser',                { user: u },                     _ok, _err); },
+    updateUserStatus(id, s, em)    { _apiCall('updateUserStatus',       { id, status: s },               _ok, _err); },
+    getUserStreak(em)              { _apiCall('getUserStreak',          {},                              _ok, _err); },
+    updateUserStreak(em)           { _apiCall('updateUserStreak',       {},                              _ok, _err); },
+    // ── Search & Upload ──────────────────────────────────
+    globalSearch(q)                { _apiCall('globalSearch',           { query: q },                    _ok, _err); },
+    uploadFileToDrive(b64, fn, mt, mod, rid, em) {
+      _apiCall('uploadFileToDrive', { base64: b64, fileName: fn, mimeType: mt, module: mod, recordId: rid }, _ok, _err);
+    },
   };
-  // Dynamically create method for any function name
-  return new Proxy(proxy, {
-    get(target, prop) {
-      if (prop in target) return target[prop];
-      // Return a function that calls the API
-      return (...args) => {
-        // Map args to {action, data, email} based on function name
-        const [d, email] = buildPayload(prop, args);
-        api(prop, d, email).then(_success).catch(_failure);
-      };
-    }
-  });
-}
-
-// Map each backend function's positional args to the {data} object the API expects
-function buildPayload(fn, args) {
-  const maps = {
-    login:                    () => [{ email: args[0], password: args[1] }, args[0]],
-    changePassword:           () => [{ oldPass: args[1], newPass: args[2] }, args[0]],
-    getMasterData:            () => [{}, ''],
-    getCompetentAuthority:    () => [{ workType: args[0], cost: args[1] }, ''],
-    getPlanningRecords:       () => [{}, ''],
-    addPlanningRecord:        () => [{ record: args[0] }, args[1]],
-    updatePlanningRecord:     () => [{ id: args[0], updates: args[1] }, args[2]],
-    submitPlanningForApproval:() => [{ id: args[0] }, args[1]],
-    getUnderApprovalRecords:  () => [{}, ''],
-    updateUnderApprovalRecord:() => [{ id: args[0], updates: args[1] }, args[2]],
-    moveToTender:             () => [{ id: args[0] }, args[1]],
-    getTenderRecords:         () => [{}, ''],
-    updateTenderRecord:       () => [{ id: args[0], updates: args[1] }, args[2]],
-    getTenderBidders:         () => [{ tenderId: args[0] }, ''],
-    addTenderBidder:          () => [{ tenderId: args[0], bidder: args[1] }, args[2]],
-    moveToAwarded:            () => [{ id: args[0] }, args[1]],
-    getAwardedRecords:        () => [{}, ''],
-    updateAwardedRecord:      () => [{ id: args[0], updates: args[1] }, args[2]],
-    updateProgress:           () => [{ id: args[0], progress: args[1], status: args[2] }, args[3]],
-    updatePayment:            () => [{ id: args[0], amount: args[1], billDate: args[2] }, args[3]],
-    getBGRecords:             () => [{}, ''],
-    addBGRecord:              () => [{ record: args[0] }, args[1]],
-    updateBGRecord:           () => [{ id: args[0], updates: args[1] }, args[2]],
-    getDashboardData:         () => [{}, ''],
-    getAllAlerts:              () => [{}, ''],
-    getProgressReport:        () => [{ filters: args[0] }, ''],
-    getPipelineReport:        () => [{}, ''],
-    getActivityLog:           () => [{ limit: args[0] }, ''],
-    getUsers:                 () => [{}, ''],
-    addUser:                  () => [{ user: args[0] }, args[1]],
-    updateUserStatus:         () => [{ id: args[0], status: args[1] }, args[2]],
-    getUserStreak:            () => [{}, args[0]],
-    updateUserStreak:         () => [{}, args[0]],
-    globalSearch:             () => [{ query: args[0] }, ''],
-    uploadFileToDrive:        () => [{ base64: args[0], fileName: args[1], mimeType: args[2], module: args[3], recordId: args[4] }, args[5]],
-  };
-  return maps[fn] ? maps[fn]() : [{ _args: args }, ''];
+  return b;
 }
 </script>
 <script>
@@ -2382,6 +2389,7 @@ let cmdItems      = [];
 let progTarget    = null;
 let pendingUploads = {};
 let confirmedFiles = {};
+window._awdRows = [];
 
 
 // ══ SOUNDS ══════════════════════════════════════════════════
@@ -5533,7 +5541,7 @@ function render_awarded(c) {
               </tr>
             </thead>
             <tbody>
-            ${rows.length ? rows.map(r => {
+            ${rows.length ? (_awdRows = rows, rows.map((r, idx) => {
               const daysLeft = r.Scheduled_Completion ?
                 Math.ceil((new Date(r.Scheduled_Completion) - new Date()) / 86400000) : null;
               const delayDays = r.Delay_Days || 0;
@@ -5555,12 +5563,12 @@ function render_awarded(c) {
                 <td style="font-size:12px">${r.Contractor_Name||'-'}</td>
                 <td><strong>${fmtCurrency(r.Awarded_Cost)}</strong>
                   ${r.Revised_Contract_Value && parseFloat(r.Revised_Contract_Value) > parseFloat(r.Awarded_Cost)
-                    ? \`<div style="font-size:10px;color:var(--amber)">Rev: \${fmtCurrency(r.Revised_Contract_Value)}</div>\` : ''}
+                    ? `<div style="font-size:10px;color:var(--amber)">Rev: \${fmtCurrency(r.Revised_Contract_Value)}</div>` : ''}
                 </td>
                 <td style="font-size:12px">${fmtDate(r.Work_Order_Date||r.LOA_Date)}</td>
                 <td style="font-size:12px">
                   <div>${fmtDate(r.Scheduled_Completion)}</div>
-                  ${r.EOT_Days > 0 ? \`<div style="font-size:10px;color:var(--amber)">+\${r.EOT_Days}d EOT</div>\` : ''}
+                  ${r.EOT_Days > 0 ? `<div style="font-size:10px;color:var(--amber)">+\${r.EOT_Days}d EOT</div>` : ''}
                 </td>
                 <td style="color:\${daysColor};font-weight:600;font-size:13px">
                   \${delayDays > 0 ? delayDays+'d late' : daysLeft !== null ? daysLeft+'d left' : '-'}
@@ -5580,13 +5588,13 @@ function render_awarded(c) {
                     <div class="prog-fill" style="width:\${payPct}%;background:var(--sky)"></div>
                   </div>
                   <div style="font-size:10px;color:var(--muted);margin-top:2px">\${fmtCurrency(r.Payment_Released||0)} released</div>
-                  ${r.Payment_Pending > 0 ? \`<div style="font-size:10px;color:var(--rose)">\${fmtCurrency(r.Payment_Pending)} pending</div>\` : ''}
+                  ${r.Payment_Pending > 0 ? `<div style="font-size:10px;color:var(--rose)">\${fmtCurrency(r.Payment_Pending)} pending</div>` : ''}
                 </td>
                 <td>${statusBadge(r.Overall_Status)}</td>
                 <td>
                   <div class="row-actions">
                     <button class="btn btn-outline btn-sm btn-icon"
-                            onclick="openAwardModal5Tab(${JSON.stringify(r).replace(/\`/g,'\\`')})"
+                            onclick="openAwardModal5Tab(_awdRows[${idx}])"
                             title="Edit full record">
                       <i class="fa fa-pen"></i>
                     </button>
@@ -6254,7 +6262,7 @@ function render_bg(c) {
               </tr>
             </thead>
             <tbody>
-            ${rows.length ? rows.map(r => {
+            ${rows.length ? (_awdRows = rows, rows.map((r, idx) => {
               const days = r.days_remaining;
               const daysColor =
                 days === null ||
@@ -8094,7 +8102,7 @@ window.openBidders     = openBidders;
 window.addBidder       = addBidder;
 window.toggleBidAmount = toggleBidAmount;
 window.moveToAwarded   = moveToAwarded;
-window.openAwardModal  = openAwardModal;
+window.openAwardModal  = openAwardModal5Tab || openAwardModal;
 window.saveAwardRecord = saveAwardRecord;
 window.openPayModal    = openPayModal;
 window.savePayment     = savePayment;
