@@ -1903,7 +1903,7 @@ tbody tr:last-child td { border-bottom: none; }
 <script>
 // ── PORTAL CONFIGURATION ─────────────────────────────────────
 // After deploying Apps Script as Web App, paste your URL below:
-window.MEED_API_URL = 'YOUR_APPS_SCRIPT_API_URL_HERE';
+window.MEED_API_URL = 'https://script.google.com/macros/s/AKfycbxyGQhUxp1WcIxUZlwYFSqczmQvZo7p66FOvJlsZIA7Q83GmAapHtyjdufDzsDkUBlx/exec';
 // Example: 'https://script.google.com/macros/s/AKfycb.../exec'
 // ─────────────────────────────────────────────────────────────
 </script>
@@ -2295,7 +2295,7 @@ window.MEED_API_URL = 'YOUR_APPS_SCRIPT_API_URL_HERE';
 
 function _apiCall(action, data, successFn, failureFn) {
   const url = window.MEED_API_URL;
-  if (!url || url === 'YOUR_APPS_SCRIPT_API_URL_HERE') {
+  if (!url || url === 'https://script.google.com/macros/s/AKfycbxyGQhUxp1WcIxUZlwYFSqczmQvZo7p66FOvJlsZIA7Q83GmAapHtyjdufDzsDkUBlx/exec') {
     const msg = 'API URL not set. Open index.html and set window.MEED_API_URL.';
     console.error(msg);
     if (failureFn) failureFn(new Error(msg));
