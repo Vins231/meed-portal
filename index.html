@@ -1,3 +1,4 @@
+<!-- force update v2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1903,7 +1904,7 @@ tbody tr:last-child td { border-bottom: none; }
 <script>
 // ── PORTAL CONFIGURATION ─────────────────────────────────────
 // After deploying Apps Script as Web App, paste your URL below:
-window.MEED_API_URL = 'window.MEED_API_URL = 'https://script.google.com/macros/s/AKfycbxyGQhUxp1WcIxUZlwYFSqczmQvZo7p66FOvJlsZIA7Q83GmAapHtyjdufDzsDkUBlx/exec';';
+window.MEED_API_URL = 'https://script.google.com/macros/s/AKfycbxyGQhUxp1WcIxUZlwYFSqczmQvZo7p66FOvJlsZIA7Q83GmAapHtyjdufDzsDkUBlx/exec';
 // Example: 'https://script.google.com/macros/s/AKfycb.../exec'
 // ─────────────────────────────────────────────────────────────
 </script>
@@ -2295,7 +2296,7 @@ window.MEED_API_URL = 'window.MEED_API_URL = 'https://script.google.com/macros/s
 
 function _apiCall(action, data, successFn, failureFn) {
   const url = window.MEED_API_URL;
-  if (!url) { {
+  if (!url) {
     const msg = 'API URL not set. Open index.html and set window.MEED_API_URL.';
     console.error(msg);
     if (failureFn) failureFn(new Error(msg));
@@ -3660,7 +3661,7 @@ function render_dashboard(c) {
             BG Expiry Alerts
             <span class="badge badge-rose"
                   style="margin-left:auto">
-              ${d.bgAlertsList.length} alerts
+              ${(d.bgAlertsList||[]).length} alerts
             </span>
           </div>
           <div id="bgAlertList"></div>
@@ -3683,22 +3684,36 @@ function render_dashboard(c) {
       const greet = hr < 12 ? 'Good morning' :
                     hr < 17 ? 'Good afternoon' :
                                'Good evening';
-      const _dg = document.getElementById('digestGreeting');
-      if (_dg) _dg.textContent = greet + ', ' + (currentUser.name||'').split(' ')[0] + ' !';
-      const _dd = document.getElementById('digestDate');
-      if (_dd) _dd.textContent = (currentUser.role||'') + ' · ' +
-        (currentUser.section||currentUser.division||'') + ' · ' +
-        new Date().toLocaleDateString('en-IN', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      document.getElementById('digestGreeting')
+        .textContent =
+        greet + ', ' +
+        currentUser.name.split(' ')[0] + ' !';
+      document.getElementById('digestDate')
+        .textContent =
+        currentUser.role + ' · ' +
+        (currentUser.section ||
+         currentUser.division) + ' · ' +
+        new Date().toLocaleDateString('en-IN', {
+          weekday:'long',
+          day:'numeric',
+          month:'long',
+          year:'numeric'
+        });
 
       // Update badges
-      const _bp = document.getElementById('badge-planning');   if(_bp) _bp.textContent = d.planningCount||0;
-      const _ba = document.getElementById('badge-approval');   if(_ba) _ba.textContent = d.approvalCount||0;
-      const _bt = document.getElementById('badge-tender');     if(_bt) _bt.textContent = d.tenderCount||0;
-      const _bb = document.getElementById('badge-bg');         if(_bb) _bb.textContent = d.bgAlerts||0;
+      document.getElementById('badge-planning')
+        .textContent = d.planningCount;
+      document.getElementById('badge-approval')
+        .textContent = d.approvalCount;
+      document.getElementById('badge-tender')
+        .textContent = d.tenderCount;
+      document.getElementById('badge-bg')
+        .textContent = d.bgAlerts;
 
       // Alert dot
       if (d.bgAlerts > 0 || d.delayed > 0) {
-        const _ad=document.getElementById('alertDot'); if(_ad) _ad.style.display='block';
+        document.getElementById('alertDot')
+          .style.display = 'block';
       }
 
       // BG Alert list
@@ -3720,8 +3735,8 @@ function render_dashboard(c) {
                style="margin-bottom:8px">
             <div class="alert-dot"></div>
             <div class="alert-text">
-              <h4>${a.BG_No} - ${a.Bank_Name}</h4>
-              <p>${(a.Name_of_Work||'Work').substring(0,40)}<br>
+              <h4>${a.BG_No||''} - ${a.Bank_Name||''}</h4>
+              <p>${(a.Name_of_Work||'').substring(0,40)}<br>
                  <strong>${a.days_remaining} days</strong> remaining
               </p>
             </div>
@@ -3729,7 +3744,8 @@ function render_dashboard(c) {
       }
 
       // Activity feed
-      const afEl = document.getElementById('activityFeed') || document.getElementById('actFeed');
+      const afEl = document.getElementById(
+                   'activityFeed');
       const acts = d.recentActivity || [];
       if (!acts.length) {
         afEl.innerHTML = `
@@ -3747,15 +3763,16 @@ function render_dashboard(c) {
           SUBMIT : 'var(--green)'
         };
         afEl.innerHTML = acts.slice(0,6).map(a => {
-          const uEmail  = String(a.User_Email||a.Email||'');
-          const uName   = uEmail ? uEmail.split('@')[0] : 'System';
-          const action  = String(a.Action||'');
-          const module  = String(a.Module||'');
-          const recId   = String(a.Record_ID||'');
-          const ts      = a.Timestamp||'';
-          const dotColors = {CREATE:'var(--teal)',UPDATE:'var(--sky)',LOGIN:'var(--amber)',UPLOAD:'var(--purple)',SUBMIT:'var(--green)'};
+          const uEmail = String(a.User_Email||a.Email||'');
+          const uName  = uEmail ? uEmail.split('@')[0] : 'System';
+          const action = String(a.Action||'');
+          const module = String(a.Module||'');
+          const recId  = String(a.Record_ID||'');
+          const ts     = a.Timestamp||'';
           return `<div class="activity-item">
-            <div class="activity-dot" style="background:${dotColors[action]||'var(--muted)'}"></div>
+            <div class="activity-dot"
+                 style="background:${colors[action]||'var(--muted)'}">
+            </div>
             <div class="activity-content">
               <h4>${uName}</h4>
               <p>${action}${module?' · '+module:''}${recId?' · '+recId:''}</p>
