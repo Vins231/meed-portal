@@ -3662,7 +3662,7 @@ function render_dashboard(c) {
             BG Expiry Alerts
             <span class="badge badge-rose"
                   style="margin-left:auto">
-              ${d.bgAlertsList.length} alerts
+              ${(d.bgAlertsList||[]).length} alerts
             </span>
           </div>
           <div id="bgAlertList"></div>
@@ -3720,7 +3720,7 @@ function render_dashboard(c) {
       // BG Alert list
       const bgEl = document.getElementById(
                    'bgAlertList');
-      if (!d.bgAlertsList.length) {
+      if (!d.bgAlertsList || !d.bgAlertsList.length) {
         bgEl.innerHTML = `
           <div class="empty-state"
                style="padding:20px">
@@ -3736,9 +3736,8 @@ function render_dashboard(c) {
                style="margin-bottom:8px">
             <div class="alert-dot"></div>
             <div class="alert-text">
-              <h4>${a.BG_No} - ${a.Bank_Name}</h4>
-              <p>${a.Name_of_Work
-                   .substring(0,40)}...<br>
+              <h4>${a.BG_No||""} - ${a.Bank_Name||""}</h4>
+              <p>${(a.Name_of_Work||'').substring(0,40)}<br>
                  <strong>
                    ${a.days_remaining} days
                  </strong> remaining
@@ -3766,24 +3765,24 @@ function render_dashboard(c) {
           UPLOAD : 'var(--purple)',
           SUBMIT : 'var(--green)'
         };
-        afEl.innerHTML = acts.slice(0,6).map(a => `
-          <div class="activity-item">
+        afEl.innerHTML = acts.slice(0,6).map(a => {
+          const uEmail = String(a.User_Email||a.Email||'');
+          const uName  = uEmail ? uEmail.split('@')[0] : 'System';
+          const action = String(a.Action||'');
+          const module = String(a.Module||'');
+          const recId  = String(a.Record_ID||'');
+          const ts     = a.Timestamp||'';
+          return `<div class="activity-item">
             <div class="activity-dot"
-                 style="background:${
-                   colors[a.Action]||
-                   'var(--muted)'}">
+                 style="background:${colors[action]||'var(--muted)'}">
             </div>
             <div class="activity-content">
-              <h4>${a.User_Email
-                    .split('@')[0]}</h4>
-              <p>${a.Action} · ${a.Module}
-                 ${a.Record_ID?
-                   ' · '+a.Record_ID:''}</p>
+              <h4>${uName}</h4>
+              <p>${action}${module?' · '+module:''}${recId?' · '+recId:''}</p>
             </div>
-            <div class="activity-time">
-              ${timeAgo(a.Timestamp)}
-            </div>
-          </div>`).join('');
+            <div class="activity-time">${timeAgo(ts)}</div>
+          </div>`;
+        }).join('');
       }
 
       // Load pending actions for digest
@@ -5596,7 +5595,7 @@ function render_awarded(c) {
                 <td>
                   <div class="row-actions">
                     <button class="btn btn-outline btn-sm btn-icon"
-                            onclick="(window.openAwardModal5Tab||window.openAwardModal)(_awdRows[${idx}])"
+                            onclick="openAwardModal5Tab(_awdRows[${idx}])"
                             title="Edit full record">
                       <i class="fa fa-pen"></i>
                     </button>
@@ -8106,6 +8105,18 @@ window.toggleBidAmount = toggleBidAmount;
 window.moveToAwarded   = moveToAwarded;
 window.openAwardModal      = openAwardModal5Tab;
 window.openAwardModal5Tab  = openAwardModal5Tab;
+
+// Expose all render_ page functions so the router can find them
+window.render_dashboard = render_dashboard;
+window.render_planning  = render_planning;
+window.render_approval  = render_approval;
+window.render_tender    = render_tender;
+window.render_awarded   = render_awarded;
+window.render_bg        = render_bg;
+window.render_reports   = render_reports;
+window.render_activity  = render_activity;
+window.render_admin     = render_admin;
+window.render_profile   = render_profile;
 window.saveAwardRecord = saveAwardRecord;
 window.openPayModal    = openPayModal;
 window.savePayment     = savePayment;
