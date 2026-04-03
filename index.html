@@ -8105,18 +8105,6 @@ window.toggleBidAmount = toggleBidAmount;
 window.moveToAwarded   = moveToAwarded;
 window.openAwardModal      = openAwardModal5Tab;
 window.openAwardModal5Tab  = openAwardModal5Tab;
-
-// Expose all render_ page functions so the router can find them
-window.render_dashboard = render_dashboard;
-window.render_planning  = render_planning;
-window.render_approval  = render_approval;
-window.render_tender    = render_tender;
-window.render_awarded   = render_awarded;
-window.render_bg        = render_bg;
-window.render_reports   = render_reports;
-window.render_activity  = render_activity;
-window.render_admin     = render_admin;
-window.render_profile   = render_profile;
 window.saveAwardRecord = saveAwardRecord;
 window.openPayModal    = openPayModal;
 window.savePayment     = savePayment;
@@ -8146,6 +8134,18 @@ window.triggerUpload   = triggerUpload;
 window.stageFile       = stageFile;
 window.clearUpload     = clearUpload;
 window.handleAlert     = handleAlert;
+
+// Page render functions — must be on window for router
+window.render_dashboard = render_dashboard;
+window.render_planning  = render_planning;
+window.render_approval  = render_approval;
+window.render_tender    = render_tender;
+window.render_awarded   = render_awarded;
+window.render_bg        = render_bg;
+window.render_reports   = render_reports;
+window.render_activity  = render_activity;
+window.render_admin     = render_admin;
+window.render_profile   = render_profile;
 </script>
 <script>
 if(document.getElementById('loginBtn')){
