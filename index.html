@@ -2376,7 +2376,6 @@ function gsr() {
     uploadFileToDrive(b64, fn, mt, mod, rid, em) {
       _apiCall('uploadFileToDrive', { base64: b64, fileName: fn, mimeType: mt, module: mod, recordId: rid }, _ok, _err);
     },
-    getPendingActions(email, section) { _apiCall('getPendingActions', { email, section }, _ok, _err); },
   };
   return b;
 }
@@ -8134,8 +8133,6 @@ window.triggerUpload   = triggerUpload;
 window.stageFile       = stageFile;
 window.clearUpload     = clearUpload;
 window.handleAlert     = handleAlert;
-
-// Page render functions — must be on window for router
 window.render_dashboard = render_dashboard;
 window.render_planning  = render_planning;
 window.render_approval  = render_approval;
